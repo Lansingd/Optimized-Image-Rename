@@ -96,19 +96,13 @@
 main/
 │── models/               # OCR 相关模型存储目录
 │── main4.5.py            # 主程序
+│── similar_map.txt       # 相似字映射表
 │── requirements.txt      # 依赖库列表
 │── README.md             # 说明文档
 │── LICENSE               # 许可证文件
 └── dist/                 # 打包输出目录
 ```
 
-## 依赖说明
-
-软件在运行时需要以下 Python 库：
-
-```bash
-pip install PyQt5 opencv-python easyocr paddleocr numpy torch
-```
 
 ## 贡献指南
 

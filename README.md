@@ -111,7 +111,7 @@ pip install PyQt5 opencv-python easyocr paddleocr numpy torch
 
 ## 联系方式
 
-如有任何问题或建议，请联系 [[your-email@example.com](mailto\:your-email@example.com)] 或访问 GitHub 项目页面提交 Issue。
+如有任何问题或建议，请联系 [[Lans3q@Gmail.com](mailto\:your-email@example.com)] 或访问 GitHub 项目页面提交 Issue。
 
 ---
 

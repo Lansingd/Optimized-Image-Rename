@@ -44,7 +44,7 @@ conda activate ocr_rename
 # 安装核心依赖
 pip install PyQt5 opencv-python easyocr paddleocr numpy difflib2
 
-使用说明 📖
+## 使用说明 📖
 快速启动：
 python main4.5.py
 操作流程
@@ -88,7 +88,7 @@ bash
 复制
 # 打包版本运行（需先使用PyInstaller打包）
 ./dist/main4.5.exe --gpu  # 强制启用GPU加速
-常见问题 ❓
+## 常见问题 ❓
 OCR识别不准确
 确保图片清晰度（建议300dpi以上）
 
@@ -97,10 +97,7 @@ OCR识别不准确
 检查姓名库是否包含目标姓名
 
 GPU未启用
-python
-复制
-# 在EnhancedOCR类中检查GPU状态
-print(f"GPU可用状态: {self.gpu_available}")
+
 处理速度慢
 关闭不需要的OCR引擎
 
@@ -108,7 +105,7 @@ print(f"GPU可用状态: {self.gpu_available}")
 
 确保已启用GPU加速
 
-贡献指南 🤝
+## 贡献指南 🤝
 欢迎提交PR！请遵循以下规范：
 
 Fork本仓库
@@ -119,5 +116,5 @@ Fork本仓库
 
 更新相关文档
 
-许可证 📜
+## 许可证 📜
 MIT License © 2023 一画室

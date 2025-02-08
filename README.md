@@ -4,7 +4,8 @@
 ![PyQt5](https://img.shields.io/badge/PyQt5-5.15%2B-green)
 ![OCR](https://img.shields.io/badge/OCR-EasyOCR%20%26%20PaddleOCR-orange)
 
-一款基于OCR技术的智能图片重命名工具，支持中文姓名识别与自动命名，方便大批量图片的管理，专为美术教育机构设计。
+**一款基于OCR技术的智能图片重命名工具，支持中文姓名识别与自动命名，方便大批量图片的管理，专为美术教育机构设计。**
+
 ![image](https://github.com/Lansingd/Optimized-Image-Rename/blob/main/IMG/main.png)
 
 

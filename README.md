@@ -30,6 +30,8 @@
 
 - **操作系统**：Windows 10/11
 - **Python 版本**：3.12
+- **CUDA 版本**：11.8（如果使用 GPU 加速）
+- **CUDNN 版本**：8.9.7（如果使用 GPU 加速）
 - **依赖库**：
   - PyQt5
   - OpenCV (cv2)
@@ -53,6 +55,8 @@
    ```
 2. 安装依赖：
    ```bash
+   python -m pip install paddlepaddle-gpu==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cu118/
+   pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
    pip install -r requirements.txt
    ```
 3. 运行程序：

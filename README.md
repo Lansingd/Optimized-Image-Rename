@@ -7,9 +7,16 @@
 一款基于OCR技术的智能图片重命名工具，支持中文姓名识别与自动命名，专为美术教育机构设计。
 ![image](https://github.com/Lansingd/Optimized-Image-Rename/blob/main/IMG/main.png)
 
+
 ## 项目简介
 
-一画室智能图片命名 v4.5 是一款基于 OCR（光学字符识别）技术的自动图片重命名工具，适用于处理批量图片文件，并根据图片内容进行智能命名。本软件支持 EasyOCR 和 PaddleOCR 两种识别引擎，并提供多种优化策略，以提高识别准确率。
+一画室智能图片命名 v4.5 是一款基于 OCR（光学字符识别）技术的自动图片重命名工具，智能识别图片中的人名并重命名文件。
+适用于处理批量图片文件，并根据图片内容进行智能命名。本软件支持 EasyOCR 和 PaddleOCR 两种识别引擎，并提供多种优化策略，以提高识别准确率。
+
+## 效果展示
+
+![image](https://github.com/Lansingd/Optimized-Image-Rename/blob/main/IMG/test/test1.png)
+![image](https://github.com/Lansingd/Optimized-Image-Rename/blob/main/IMG/test/test2.png)
 
 ## 功能特点
 

@@ -1,6 +1,6 @@
 # 一画室智能图片命名工具 v4.5
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
 ![PyQt5](https://img.shields.io/badge/PyQt5-5.15%2B-green)
 ![OCR](https://img.shields.io/badge/OCR-EasyOCR%20%26%20PaddleOCR-orange)
 

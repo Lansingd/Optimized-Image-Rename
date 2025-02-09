@@ -1,6 +1,6 @@
 # 一画室智能图片命名工具 v4.5
 
-![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![PyQt5](https://img.shields.io/badge/PyQt5-5.15%2B-green)
 ![OCR](https://img.shields.io/badge/OCR-EasyOCR%20%26%20PaddleOCR-orange)
 
@@ -30,7 +30,7 @@
 ## 运行环境
 
 - **操作系统**：Windows 10/11
-- **Python 版本**：3.12
+- **Python 版本**：3.11 3.12
 - **CUDA 版本**：11.8（如果使用 GPU 加速）
 - **CUDNN 版本**：8.9.7（如果使用 GPU 加速）
 - **依赖库**：
@@ -41,20 +41,20 @@
   - NumPy
   - Torch（如果使用 GPU 加速）
 
-## 安装方法
+## 运行方法
 
 ### 方式 1：使用安装包（较大）
 
 直接运行提供的 Windows 安装包进行安装，无需手动配置环境。
 
-### 方式 2：手动安装运行（推荐）
+### 方式 2：直接运行（推荐）
 
 1. 克隆项目：
    ```bash
-   git clone https://github.com/yourusername/ImageRenamer.git
-   cd ImageRenamer
+   git clone https://github.com/Lansingd/Optimized-Image-Rename.git
+   cd Optimized-Image-Rename
    ```
-2. 安装依赖：
+2. 安装依赖（推荐在conda环境下）：
    ```bash
    python -m pip install paddlepaddle-gpu==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cu118/
    pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118

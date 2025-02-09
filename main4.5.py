@@ -51,7 +51,9 @@ class EnhancedOCR:
         if self.use_easyocr and self.easy_reader:
             try:
                 easy_result = self.easy_reader.readtext(img, detail=0)
-                texts.append(' '.join(easy_result) if easy_result else "")
+                easy_text = ' '.join(easy_result) if easy_result else ""
+                texts.append(easy_text)
+                print(f"EasyOCR 识别结果: {easy_text}")  # 这里可以改成日志输出
             except Exception as e:
                 print(f"EasyOCR 识别异常: {str(e)}")
 
@@ -130,6 +132,7 @@ class Worker(QThread):
 
                     # OCR识别
                     ocr_text = ocr_engine.recognize_text(process_area)
+                    self.update_log.emit(f"识别结果: {ocr_text}")  # 发送 OCR 识别结果
                     best_match = self.main_app.find_best_match(ocr_text, full_names)
 
                     if best_match:

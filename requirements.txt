@@ -1,12 +1,8 @@
-PyQt5==5.15.10
-opencv-python==4.10.0
+PyQt5==5.15.11
+opencv-python==4.11.0.86
 easyocr==1.7.2
 numpy==1.26.4
 paddleocr==2.9.1
-paddlepaddle-gpu==3.0.0rc1
-torch==2.6.0+cu118
-torchvision==0.21.0+cu118
-torchaudio==2.6.0+cu118
 scipy==1.15.1
 scikit-learn==1.6.1
 scikit-image==0.25.1

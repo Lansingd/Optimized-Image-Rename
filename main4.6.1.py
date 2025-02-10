@@ -2,6 +2,8 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                             QGroupBox, QPushButton, QLabel, QTextEdit, QProgressBar,
                             QRadioButton, QCheckBox, QFileDialog, QMessageBox)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
+import traceback
+import sys
 import os
 import cv2
 import easyocr
@@ -47,24 +49,43 @@ class EnhancedOCR:
             return False
 
     def recognize_text(self, img):
-        texts = []
+        """返回包含置信度的识别结果"""
+        results = {}
         if self.use_easyocr and self.easy_reader:
             try:
-                easy_result = self.easy_reader.readtext(img, detail=0)
-                easy_text = ' '.join(easy_result) if easy_result else ""
-                texts.append(easy_text)
-                print(f"EasyOCR 识别结果: {easy_text}")  # 这里可以改成日志输出
+                easy_full = self.easy_reader.readtext(img)
+                easy_text = ' '.join([res[1] for res in easy_full])
+                easy_conf = sum(res[2] for res in easy_full)/len(easy_full) if easy_full else 0
+                results['easyocr'] = (easy_text, easy_conf)
             except Exception as e:
                 print(f"EasyOCR 识别异常: {str(e)}")
+                results['easyocr'] = ("", 0)
 
         if self.use_paddleocr and self.paddle_ocr:
             try:
-                paddle_result = self.paddle_ocr.ocr(img, cls=True) or [[]]
-                texts.append(' '.join([line[1][0] for line in paddle_result[0]]) if paddle_result[0] else "")
+                paddle_result = self.paddle_ocr.ocr(img, cls=True)
+                paddle_text = []
+                paddle_confs = []
+                
+                if paddle_result is not None:
+                    for line in paddle_result:
+                        if line:  # 过滤空行
+                            for word_info in line:
+                                if word_info and len(word_info) >= 2:
+                                    # 添加类型安全转换
+                                    text = str(word_info[1][0])  # 确保文本为字符串
+                                    conf = float(word_info[1][1])  # 强制转换为浮点数
+                                    paddle_text.append(text)
+                                    paddle_confs.append(conf)
+                
+                paddle_text_str = ' '.join(paddle_text) if paddle_text else ""
+                paddle_conf_avg = sum(paddle_confs)/len(paddle_confs) if paddle_confs else 0.0
+                results['paddleocr'] = (paddle_text_str, paddle_conf_avg)
             except Exception as e:
                 print(f"PaddleOCR 识别异常: {str(e)}")
-
-        return self._select_best_result(texts)
+                results['paddleocr'] = ("", 0)
+        
+        return results
 
     def _select_best_result(self, texts):
         """改进的结果选择策略"""
@@ -130,11 +151,46 @@ class Worker(QThread):
                     if self.main_app.check_preprocess.isChecked():
                         process_area = self.main_app.preprocess_image(process_area)
 
-                    # OCR识别
-                    ocr_text = ocr_engine.recognize_text(process_area)
-                    self.update_log.emit(f"识别结果: {ocr_text}")  # 发送 OCR 识别结果
-                    best_match = self.main_app.find_best_match(ocr_text, full_names)
-
+                    # OCR识别（修改部分）
+                    # 修改后的匹配逻辑
+                    ocr_results = ocr_engine.recognize_text(process_area)
+                    easy_text, easy_conf = ocr_results.get('easyocr', ("", 0))
+                    paddle_text, paddle_conf = ocr_results.get('paddleocr', ("", 0))
+            
+                    matches = []
+                    if use_easyocr:
+                        easy_match = self.main_app.find_best_match(easy_text, full_names)
+                        if easy_match: matches.append(('easyocr', easy_match, easy_conf))
+                    
+                    if use_paddleocr:
+                        paddle_match = self.main_app.find_best_match(paddle_text, full_names)
+                        if paddle_match: matches.append(('paddleocr', paddle_match, paddle_conf))
+            
+                    # 结果决策逻辑
+                    if len(matches) > 0:
+                        # 优先选择置信度高的结果
+                        best = max(matches, key=lambda x: x[2])
+                        # 当置信度相同时，选择出现更早的结果
+                        if best[2] == 0:
+                            best = matches[0]
+                        best_match = best[1]
+                    self.update_log.emit(f"EasyOCR结果: {easy_text} (置信度: {easy_conf:.2f})")
+                    self.update_log.emit(f"PaddleOCR结果: {paddle_text} (置信度: {paddle_conf:.2f})")
+    
+                    best_match = None
+                    # 优先检查EasyOCR结果
+                    if use_easyocr and ocr_results.get('easyocr'):
+                        best_match = self.main_app.find_best_match(ocr_results['easyocr'], full_names)
+                    
+                    # 如果未匹配成功，检查PaddleOCR结果
+                    if not best_match and use_paddleocr and ocr_results.get('paddleocr'):
+                        best_match = self.main_app.find_best_match(ocr_results['paddleocr'], full_names)
+    
+                    # 如果开启单字兜底仍未匹配
+                    if not best_match and self.main_app.check_single.isChecked():
+                        combined_text = ' '.join([v for v in ocr_results.values()])
+                        best_match = self.main_app.find_best_match(combined_text, full_names)
+    
                     if best_match:
                         # 生成安全文件名
                         safe_name = re.sub(r'[\\/*?:"<>|]', '#', best_match)[:220]
@@ -159,17 +215,26 @@ class Worker(QThread):
             self.update_log.emit("处理完成！" if not self.stop_flag else "处理已中止")
 
         except Exception as e:
-            self.update_log.emit(f"发生严重错误: {str(e)}")
+            error_msg = f"严重错误: {str(e)}\n{traceback.format_exc()}"
+            self.update_log.emit(error_msg)
         finally:
             self.finished.emit()
 
 class ImageRenamerApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("一画室智能图片命名 v4.5")
+        self.setWindowTitle("一画室智能图片命名 v4.6.1")
         self.setup_ui()
         self.setup_vars()
         self.setup_connections()
+
+    # 更新引擎选择判断
+    def setup_connections(self):
+        # 添加单选按钮互斥
+        self.radio_easy.clicked.connect(lambda: self.radio_both.setChecked(False))
+        self.radio_paddle.clicked.connect(lambda: self.radio_both.setChecked(False))
+        self.radio_both.clicked.connect(lambda: [self.radio_easy.setChecked(False), 
+                                                self.radio_paddle.setChecked(False)])
 
     def setup_ui(self):
         main_widget = QWidget()
@@ -256,7 +321,7 @@ class ImageRenamerApp(QMainWindow):
         self.similar_map = self.load_similar_map()
         
     def load_similar_map(self):
-        """加载形近字映射表"""
+        """加载形近字映射表（支持1-2个字符）"""
         similar_map = {}
         try:
             with open("similar_map.txt", "r", encoding="utf-8") as f:
@@ -264,8 +329,10 @@ class ImageRenamerApp(QMainWindow):
                     line = line.strip()
                     if line and ":" in line:
                         key, value = line.split(":", 1)
-                        similar_map[key.strip().strip('"')] = value.strip().strip('",')
-            self.log(f"已加载 {len(similar_map)} 条形近字映射")
+                        key = key.strip()
+                        value = value.strip()
+                        similar_map[key] = value
+            self.log(f"已加载 {len(similar_map)} 条形近字映射（支持1-2字符）")
         except Exception as e:
             self.log(f"加载形近字映射失败: {str(e)}")
         return similar_map
@@ -278,8 +345,8 @@ class ImageRenamerApp(QMainWindow):
         self.exit_btn.clicked.connect(self.close)
 
     def log(self, message):
-        """线程安全的日志记录"""
-        self.log_text.append(f"{time.strftime('%H:%M:%S')} - {message}")
+        """显示带引擎标识的日志"""
+        self.log_text.append(f"{time.strftime('%H:%M:%S')} [OCR] - {message}")
 
     def update_progress(self, value):
         self.progress.setValue(value)
@@ -348,20 +415,76 @@ class ImageRenamerApp(QMainWindow):
             return None, None
 
     def find_best_match(self, text, full_names):
-        """增强型匹配逻辑"""
-        clean_text = ''.join([c for c in text if '\u4e00' <= c <= '\u9fff'])
+        """增强型匹配逻辑（支持形近字修正后重新匹配）"""
+        try:
+            # 强制转换为字符串并过滤非中文字符
+            text_str = str(text)
+            clean_text = ''.join([c for c in text_str if '\u4e00' <= c <= '\u9fff'])
+            modified_text = self.apply_similar_replace(clean_text)
+            
+            # 增加调试日志
+            self.log(f"原始文本: {text_str} | 清洗后: {clean_text} | 修正后: {modified_text}")
+            
+            return self._do_match(modified_text, full_names) or self._do_match(clean_text, full_names)
+        except Exception as e:
+            self.log(f"匹配过程中发生异常: {str(e)}")
+            return None
+    
+    def apply_similar_replace(self, text):
+        """应用形近字替换（支持多字符）"""
+        try:
+            clean_text = ''.join([str(c) for c in text if '\u4e00' <= c <= '\u9fff'])  # 强制转为字符串
+            replaced = []
+            i = 0
+            while i < len(clean_text):
+                # 优先匹配最长可能的组合（最多3字符）
+                max_len = min(3, len(clean_text)-i)
+                found = False
+                for l in range(max_len, 0, -1):
+                    substr = clean_text[i:i+l]
+                    if substr in self.similar_map:
+                        replaced.append(str(self.similar_map[substr]))
+                        i += l
+                        found = True
+                        break
+                if not found:
+                    replaced.append(str(clean_text[i]))
+                    i += 1
+            return ''.join(replaced)
+        except Exception as e:
+            self.log(f"形近字替换异常: {str(e)}")
+            return str(text)
 
-        # 阶段1：形近字匹配
-        for pattern, name in self.similar_map.items():
-            if pattern in clean_text and name in full_names:
-                return name
+    def apply_similar_replace(self, text):
+        clean_text = ''.join([c for c in str(text) if '\u4e00' <= c <= '\u9fff'])  # 强制转为字符串
+        replaced = []
+        i = 0
+        while i < len(clean_text):
+            matched = False
+            
+            # 添加边界检查
+            if i+1 < len(clean_text):
+                pair = clean_text[i:i+2]
+                if pair in self.similar_map:
+                    replaced.append(str(self.similar_map[pair]))  # 确保替换值为字符串
+                    i += 2
+                    matched = True
+            
+            if not matched and i < len(clean_text):
+                single = str(clean_text[i])  # 强制转为字符串
+                replaced.append(str(self.similar_map.get(single, single)))  # 双重字符串转换
+                i += 1
+        
+        return ''.join(replaced)
 
-        # 阶段2：全名匹配
+    def _do_match(self, clean_text, full_names):
+        """实际匹配逻辑"""
+        # 阶段1：全名匹配
         for name in full_names:
             if name in clean_text:
                 return name
 
-        # 阶段3：子串匹配
+        # 阶段2：子串匹配
         best_match = None
         max_length = 0
         for name in full_names:
@@ -372,7 +495,7 @@ class ImageRenamerApp(QMainWindow):
         if max_length >= 2:
             return best_match
 
-        # 阶段4：单字兜底（可选）
+        # 阶段3：单字兜底
         if self.check_single.isChecked():
             char_counts = defaultdict(int)
             for c in clean_text:
@@ -383,18 +506,36 @@ class ImageRenamerApp(QMainWindow):
                 max_count = max(char_counts.values())
                 candidates = [k for k, v in char_counts.items() if v == max_count]
                 return sorted(candidates, key=lambda x: full_names.index(x))[0]
-
         return None
+
 
     def preprocess_image(self, img):
         """可配置的图像预处理"""
-        # 灰底白字专用预处理
-        inverted = cv2.bitwise_not(img)
-        alpha = 1.8
-        beta = -60
-        adjusted = cv2.convertScaleAbs(inverted, alpha=alpha, beta=beta)
-        gray = cv2.cvtColor(adjusted, cv2.COLOR_BGR2GRAY)
-        return cv2.GaussianBlur(gray, (3, 3), 0)
+        try:
+            # 深度类型校验
+            if not isinstance(img, np.ndarray):
+                img = np.array(img, dtype=np.uint8)
+            elif img.dtype != np.uint8:
+                img = img.astype(np.uint8)
+                
+            # 通道数处理
+            if len(img.shape) == 2:
+                img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+            elif img.shape[2] == 4:  # 处理RGBA图像
+                img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
+                
+            # 增强对比度
+            lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+            cl = clahe.apply(l)
+            limg = cv2.merge((cl,a,b))
+            processed = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+            
+            return cv2.GaussianBlur(processed, (3, 3), 0)
+        except Exception as e:
+            self.log(f"图像预处理异常: {str(e)}")
+            return img  # 返回原始图像作为兜底
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication

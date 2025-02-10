@@ -1,5 +1,4 @@
-# 一画室智能图片命名工具 v4.5
-
+# 一画室智能图片命名工具
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![PyQt5](https://img.shields.io/badge/PyQt5-5.15%2B-green)
 ![OCR](https://img.shields.io/badge/OCR-EasyOCR%20%26%20PaddleOCR-orange)
@@ -79,9 +78,8 @@
 3. **相似字映射表(可选)**：编辑similar_map.txt文件添加自定义映射：
 ➤ 示例：
    ```
-   "彦萜": "李彦喆", 
-   "朱芮": "朱芮宁", 
-   "田涵": "田一涵",
+   "孑": "子",
+   "壬": "王",
    ```
 5. **配置 OCR 选项**（可选）：
    - 选择 OCR 引擎（EasyOCR、PaddleOCR、双重识别）。

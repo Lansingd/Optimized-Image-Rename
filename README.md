@@ -60,7 +60,7 @@
    ```
 3. 运行程序：
    ```bash
-   python main4.5.py
+   python main4.6.2.py
    ```
 
 ## 使用方法

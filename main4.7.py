@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                             QGroupBox, QPushButton, QLabel, QTextEdit, QProgressBar,
-                            QRadioButton, QCheckBox, QFileDialog, QMessageBox,QApplication)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+                            QRadioButton, QCheckBox, QFileDialog, QMessageBox)
+from PySide6.QtCore import Qt, QThread, Signal
 import traceback
 import sys
 import os
@@ -89,9 +89,9 @@ class EnhancedOCR:
         return results
 
 class Worker(QThread):
-    update_log = pyqtSignal(str)
-    update_progress = pyqtSignal(int)
-    finished = pyqtSignal()
+    update_log = Signal(str)
+    update_progress = Signal(int)
+    finished = Signal()
 
     def __init__(self, main_app):
         super().__init__()
@@ -188,7 +188,7 @@ class Worker(QThread):
 class ImageRenamerApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("一画室智能图片命名 v4.6.2")
+        self.setWindowTitle("一画室智能图片命名 v4.7")
         self.setup_ui()
         self.setup_vars()
         self.setup_connections()
@@ -428,4 +428,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = ImageRenamerApp()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

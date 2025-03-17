@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-PyQt5==5.15.11
-=======
 PySide6==6.8.2.1
->>>>>>> Stashed changes
 opencv-python==4.11.0.86
 easyocr==1.7.2
 numpy==1.26.4

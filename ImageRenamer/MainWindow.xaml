@@ -1,0 +1,56 @@
+﻿<Window x:Class="ImageRenamer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="一画室智能图片命名" Height="560" Width="684"
+        Icon="pack://application:,,,/Resources/icon.ico">
+  <Grid Margin="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- 文件设置 -->
+    <GroupBox Header="文件设置" Margin="0,0,0,10">
+      <StackPanel Margin="10">
+        <WrapPanel>
+          <Button Width="150" Margin="0,0,10,6" Click="OnPickFolder">选择图片文件夹</Button>
+          <TextBlock x:Name="TxtFolder" VerticalAlignment="Center" Text="未选择" TextWrapping="Wrap" />
+        </WrapPanel>
+        <WrapPanel>
+          <Button Width="150" Margin="0,0,10,0" Click="OnPickNameFile">选择姓名库文件</Button>
+          <TextBlock x:Name="TxtNameFile" VerticalAlignment="Center" Text="未选择" TextWrapping="Wrap"/>
+        </WrapPanel>
+      </StackPanel>
+    </GroupBox>
+
+    <!-- 识别设置 -->
+    <GroupBox Header="识别设置" Grid.Row="1" Margin="0,0,0,10">
+      <StackPanel Margin="10">
+        <WrapPanel Margin="0,0,0,6">
+          <CheckBox x:Name="ChkPreprocess" Content="启用图像预处理" Margin="0,0,18,0"/>
+                    <CheckBox x:Name="ChkFull" Content="全图识别模式" IsChecked="True" Margin="0,0,18,0"/>
+          <CheckBox x:Name="ChkSingleFallback" Content="单字兜底匹配" />
+        </WrapPanel>
+        <WrapPanel>
+          <TextBlock Text="形近字映射文件（同目录 similar_map.txt 可选）"/>
+        </WrapPanel>
+      </StackPanel>
+    </GroupBox>
+
+    <!-- 日志 -->
+    <GroupBox Header="处理日志" Grid.Row="2" Margin="0,0,0,10">
+      <Grid>
+        <TextBox x:Name="TxtLog" IsReadOnly="True" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+      </Grid>
+    </GroupBox>
+
+    <!-- 控制区 -->
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+      <ProgressBar x:Name="Bar" Width="460" Height="20" Margin="0,0,10,0"/>
+      <Button x:Name="BtnStart" Content="开始处理" Width="100" Margin="0,0,8,0" Click="OnStart"/>
+      <Button x:Name="BtnStop"  Content="停止" Width="80" Click="OnStop"/>
+    </StackPanel>
+  </Grid>
+</Window>

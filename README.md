@@ -1,42 +1,34 @@
-📖 分支说明：C# / WPF 版 ImageRenamer
+# OCR Image Renamer - .NET Branch (v4.8)
 
-这个分支的目标，是把原本的 Python + PaddleOCR 工具移植到 C# / WPF 桌面应用。
+本分支是将 `v4.7` Python 版本（基于 PySide6 + EasyOCR/PaddleOCR + GPU 支持）的智能图片批量重命名工具移植到 **.NET / WPF 桌面应用** 的核心实现。  
 
-这样做的主要原因：
+## 为什么做这个分支？
 
-Python 版本在 Windows 下依赖繁琐，部署困难；
+- **Python 版本的痛点**
+  - Windows 下依赖繁琐（PyTorch、EasyOCR、PaddleOCR 等均需手动配置）
+  - 打包后体积巨大，且存在 CUDA/CUDNN 环境匹配问题
+  - 对非技术用户来说，启动和部署门槛过高
 
-希望提供一个双击即可运行的 Windows 桌面程序，降低使用门槛；
+- **C# / .NET 版本的优势**
+  - 提供 **双击即可运行的 Windows 桌面程序**（.exe 或 MSI 安装包）
+  - 使用 .NET WPF 原生界面，符合 Windows 用户的操作习惯
+  - 依赖通过 NuGet 与自动缓存模型管理，安装过程更友好
+  - 内存管理更稳定：通过 `using` 和 `IDisposable` 控制 OpenCV / PaddleOCR 原生资源
+  - 避免 Python 打包后的庞大体积，便于分发和部署
 
-结合 WPF UI，可以提供更友好的操作体验（批量重命名、日志输出、参数选择等）。
+- **不足与取舍**
+  - 当前版本仅支持 **CPU 推理**，相较 Python + GPU 的方案，速度较慢
+  - 并发处理能力有限（为避免原生库死锁，采取串行锁策略）
+  - 高性能 GPU 部署在 Python 环境下更灵活，但 CUDA 配置过程对普通用户依旧复杂
 
-✅ 好处 / 改进点
-免安装 Python 环境：用户不再需要配置 pip / venv / PaddleOCR 依赖。
+---
 
-一键打包成安装包 (MSI/EXE)：支持 Windows 下直接安装，图标、快捷方式等体验接近普通软件。
+## 功能特性
 
-UI 界面操作：相比命令行，提供更直观的复选框、日志窗口、进度反馈。
+- 支持 PaddleOCR 中文模型（PP-OCRv4），自动缓存到 `%AppData%`
+- 基于 OpenCV 的轻量预处理，提升识别稳定性
+- 多 ROI 区域检测（右下角优先，全图兜底），针对美术教育场景优化
+- 自动清洗文本，优先输出符合姓名特征的结果
+- 全程串行执行，避免 PaddleOCR 在并发调用下的锁死问题
 
-跨显卡兼容：在 .NET 里可以选择
-
-PaddleOCR (准确率较高)
-
-或 ONNX Runtime + DirectML（支持 NVIDIA / AMD / Intel GPU，无需用户安装 CUDA）。
-
-配置自动记忆：如“轻量预处理”选项会记住上次选择。
-
-⚠️ 不足 / 取舍
-识别准确率：目前 PaddleOCR C# 封装版本的精度 ≈ Python 原版，但 DirectML + ONNX 的识别率仍偏低；推荐默认使用 PaddleOCR 模式。
-
-性能：在 CPU 下比 Python 稍慢；GPU 下因 DirectML 抽象层，速度比 CUDA 版本慢一些。
-
-生态差异：Python 社区对 OCR 的模型支持更快（如 PP-OCRv5/PP-Structure 等），C# 分支可能会滞后。
-
-模型下载：有时依赖 PaddleOCR 模型自动下载，受网络影响可能失败，需要用户手动放置。
-
-📦 适用场景
-想在 Windows 下快速体验 OCR + 批量重命名，而不想折腾 Python 环境；
-
-需要一个带 UI 的轻量工具，方便非技术用户使用；
-
-公司/团队环境，直接分发 MSI/EXE 即可部署，无需安装解释器。
+---

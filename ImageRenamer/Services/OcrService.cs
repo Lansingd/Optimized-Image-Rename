@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-
+// 新增：
+using System.Text.RegularExpressions;
 using OpenCvSharp;
 using Sdcb.PaddleOCR;
 using Sdcb.PaddleOCR.Models;
@@ -24,24 +25,29 @@ namespace ImageRenamer.Services
         private readonly bool _preprocess;
         private readonly PaddleOcrAll _ocr;
 
-        // 串行锁：确保同一时刻只跑一张，防止 Paddle/ONNX/OpenCV 原生库在并发下锁死
+        // 新增：形近字映射
+        private readonly List<KeyValuePair<string, string>> _similarPairs;
+
         private static readonly SemaphoreSlim _serial = new(1, 1);
 
         private OcrService(FullOcrModel model, bool preprocess)
         {
             _preprocess = preprocess;
 
-            // 仅用 CPU；用委托方式配置，兼容大多数 Sdcb 版本
             _ocr = new PaddleOcrAll(model, cfg =>
             {
                 cfg.UseGpu = false;
-                // 某些旧版本没有 EnableMkldnn / 线程数等属性，这里不显式设置，保持默认最稳
             })
             {
                 AllowRotateDetection = true,
                 Enable180Classification = true,
             };
+
+            // 新增：加载 similar_map.txt（默认在程序目录）
+            var mapPath = Path.Combine(AppContext.BaseDirectory, "similar_map.txt");
+            _similarPairs = LoadSimilarMap(mapPath);
         }
+
 
         public static async Task<OcrService> CreateAsync(bool preprocess, Action<string>? log = null, CancellationToken ct = default)
         {
@@ -109,6 +115,7 @@ namespace ImageRenamer.Services
 
                         string text = string.Concat(result.Regions?.Select(z => z.Text) ?? Enumerable.Empty<string>());
                         text = Normalize(text);
+                        text = ApplySimilarMap(text, _similarPairs);
 
                         int cjk = text.Count(ch => ch >= 0x4e00 && ch <= 0x9fff);
                         if (cjk == 0) continue;
@@ -128,6 +135,75 @@ namespace ImageRenamer.Services
                 _serial.Release();
             }
         }
+
+        // 新增：形近字映射加载与应用
+        private static List<KeyValuePair<string, string>> LoadSimilarMap(string path)
+        {
+            var pairs = new List<KeyValuePair<string, string>>();
+            try
+            {
+                if (!File.Exists(path)) return pairs;
+
+                foreach (var raw in File.ReadAllLines(path, Encoding.UTF8))
+                {
+                    var s = raw.Trim();
+                    if (string.IsNullOrEmpty(s)) continue;
+                    if (s.StartsWith("#") || s.StartsWith("//")) continue; // 支持注释
+                    if (s.EndsWith(",")) s = s[..^1]; // 容忍行尾逗号
+
+                    // 解析形如  "错":"正"
+                    var m = Regex.Match(s, "^\\s*\"(?<k>.*?)\"\\s*:\\s*\"(?<v>.*?)\"\\s*$");
+                    if (m.Success)
+                    {
+                        var k = m.Groups["k"].Value;
+                        var v = m.Groups["v"].Value;
+                        if (!string.IsNullOrEmpty(k))
+                            pairs.Add(new KeyValuePair<string, string>(k, v));
+                        continue;
+                    }
+
+                    // 兜底：支持  错->正 / 错 正 / 错\t正  等简写
+                    var parts = s.Split(new[] { "->", "=>", "\t", " " }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        var k = parts[0].Trim('"');
+                        var v = parts[1].Trim('"');
+                        if (!string.IsNullOrEmpty(k))
+                            pairs.Add(new KeyValuePair<string, string>(k, v));
+                    }
+                }
+
+                // 为避免短 key 抢先替换造成“误吞”，按 key 长度降序
+                pairs = pairs
+                    .OrderByDescending(p => p.Key.Length)
+                    .ToList();
+            }
+            catch
+            {
+                // 读取/解析失败时静默，不影响 OCR 主流程
+            }
+            return pairs;
+        }
+
+        private static string ApplySimilarMap(string s, List<KeyValuePair<string, string>> pairs)
+        {
+            if (string.IsNullOrEmpty(s) || pairs.Count == 0) return s;
+
+            // 做 1~2 轮以覆盖连锁替换，但避免死循环
+            var prev = s;
+            for (int round = 0; round < 2; round++)
+            {
+                foreach (var kv in pairs)
+                {
+                    if (string.IsNullOrEmpty(kv.Key)) continue;
+                    s = s.Replace(kv.Key, kv.Value);
+                }
+                if (s == prev) break;
+                prev = s;
+            }
+            return s;
+        }
+
 
         // --------- ROI：右下角优先 + 边条 + 全图 ----------
         private static List<Rect> GenerateRois(int w, int h)

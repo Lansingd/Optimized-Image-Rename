@@ -15,6 +15,7 @@ public partial class MainWindow : Window
 {
     private string? _imageFolder;
     private string? _nameFile;
+    private string? _destRoot; // 目标根目录（可选）
     private CancellationTokenSource? _cts;
 
     private Services.OcrService? _ocr;
@@ -39,6 +40,21 @@ public partial class MainWindow : Window
             _imageFolder = dlg.SelectedPath;
             TxtFolder.Text = _imageFolder;
             Log($"已选择图片文件夹: {_imageFolder}");
+        }
+    }
+
+    private void OnPickDestRoot(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog
+        {
+            Description = "选择自动建文件夹的根目录（可选）"
+        };
+        var ok = dlg.ShowDialog(this);
+        if (ok == true)
+        {
+            _destRoot = dlg.SelectedPath;
+            TxtDestRoot.Text = _destRoot;
+            Log($"已选择目标根目录: {_destRoot}");
         }
     }
 
@@ -111,21 +127,54 @@ public partial class MainWindow : Window
                     Log($"Tesseract 结果: {text}");
 
                     // 匹配
+                    // 匹配
                     var best = _matcher!.FindBest(text);
                     if (best != null)
                     {
                         var ext = Path.GetExtension(file);
                         var safe = Services.NameMatcher.ToSafeFilename(best);
-                        var newName = Path.Combine(_imageFolder!, $"{safe}{ext}");
+
+                        // 1) 计算目标基路径
+                        var autoFolder = ChkAutoFolder.IsChecked == true;
+                        var targetBase = autoFolder
+                            ? (_destRoot ?? _imageFolder!)   // 勾选但未选根目录 → 默认用图片文件夹
+                            : _imageFolder!;                 // 未勾选 → 保持原逻辑
+
+                        // 2) 如需要，创建按姓名分组的子目录
+                        var targetDir = autoFolder
+                            ? Path.Combine(targetBase, safe) // 每个姓名一个同名文件夹
+                            : targetBase;
+
+                        try
+                        {
+                            if (!Directory.Exists(targetDir))
+                                Directory.CreateDirectory(targetDir);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log($"创建文件夹失败 [{targetDir}]: {ex.Message}，将回退到直接重命名。");
+                            targetDir = _imageFolder!; // 回退策略：直接放回原图目录
+                        }
+
+                        // 3) 生成去重后的目标文件名
+                        var newName = Path.Combine(targetDir, $"{safe}{ext}");
                         int c = 1;
                         while (File.Exists(newName))
                         {
-                            newName = Path.Combine(_imageFolder!, $"{safe}_{c}{ext}");
+                            newName = Path.Combine(targetDir, $"{safe}_{c}{ext}");
                             c++;
                         }
+
+                        // 4) 移动（含重命名）
                         File.Move(file, newName);
-                        Log($"重命名成功: {Path.GetFileName(file)} → {Path.GetFileName(newName)}");
+
+                        // 5) 友好日志
+                        if (autoFolder)
+                            Log($"重命名并归档: {Path.GetFileName(file)} → {safe}/{Path.GetFileName(newName)}");
+                        else
+                            Log($"重命名成功: {Path.GetFileName(file)} → {Path.GetFileName(newName)}");
                     }
+
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception ex)

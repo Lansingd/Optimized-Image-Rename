@@ -1,48 +1,95 @@
-# OCR Image Renamer - .NET Branch (v4.9)
+# 📸 一画室智能图片命名 - .NET 版 (v4.9) 🚀
 
-本分支是将 `v4.7` Python 版本（基于 PySide6 + EasyOCR/PaddleOCR + GPU 支持）的智能图片批量重命名工具移植到 **.NET / WPF 桌面应用** 的核心实现。  
+![C#](https://img.shields.io/badge/-C%23-239120?style=flat&logo=c-sharp&logoColor=white) ![.NET](https://img.shields.io/badge/-.NET-512BD4?style=flat&logo=dotnet&logoColor=white) ![WPF](https://img.shields.io/badge/-WPF-0078D6?style=flat&logo=windows&logoColor=white) ![PaddleOCR](https://img.shields.io/badge/-PaddleOCR-FF6F00?style=flat&logo=paddlepaddle&logoColor=white) ![OpenCV](https://img.shields.io/badge/-OpenCV-5C3EE8?style=flat&logo=opencv&logoColor=white)
 
-## 为什么做这个分支？
-
-- **Python 版本的痛点**
-  - Windows 下依赖繁琐（PyTorch、EasyOCR、PaddleOCR 等均需手动配置）
-  - 打包后体积巨大，且存在 CUDA/CUDNN 环境匹配问题
-  - 对非技术用户来说，启动和部署门槛过高
-
-- **C# / .NET 版本的优势**
-  - 提供 **双击即可运行的 Windows 桌面程序**（.exe 或 MSI 安装包）
-  - 使用 .NET WPF 原生界面，符合 Windows 用户的操作习惯
-  - 依赖通过 NuGet 与自动缓存模型管理，安装过程更友好
-  - 内存管理更稳定：通过 `using` 和 `IDisposable` 控制 OpenCV / PaddleOCR 原生资源
-  - 避免 Python 打包后的庞大体积，便于分发和部署
-
-- **不足与取舍**
-  - 当前版本仅支持 **CPU 推理**，相较 Python + GPU 的方案，速度较慢
-  - 并发处理能力有限（为避免原生库死锁，采取串行锁策略）
-  - 高性能 GPU 部署在 Python 环境下更灵活，但 CUDA 配置过程对普通用户依旧复杂
+🎉 **欢迎体验 一画室智能图片命名！** 这是一款专为我们一画室设计的智能图片批量重命名工具，也适用于广大美术教培机构，基于 `.NET` 和 `WPF`，结合强大的 **PaddleOCR** 中文识别技术，轻松从图片中提取中文姓名并智能整理！ 📂✨
 
 ---
 
-## 功能特性
+## 🌟 为什么制作 一画室智能图片命名？
+      因为每学期整理学生图片实在是太累了……
 
-- 支持 PaddleOCR 中文模型（PP-OCRv4），自动缓存到 `%AppData%`
-- 基于 OpenCV 的轻量预处理，提升识别稳定性
-- 多 ROI 区域检测（右下角优先，全图兜底），针对美术教育场景优化
-- 自动清洗文本，优先输出符合姓名特征的结果
-- 全程串行执行，避免 PaddleOCR 在并发调用下的锁死问题
+🔍 **从 Python 到 .NET 的华丽转身**  
+相比之前基于 `PyQt5` 的 Python 版本（`v4.7`），我将工具移植到 `.NET / WPF`，带来更流畅的用户体验和更便捷的部署方式！告别繁琐的依赖配置，享受开箱即用的快感！ 🎯
+
+### 🛠️ Python 版本的痛点
+- 🛑 依赖复杂：PyTorch、EasyOCR、PaddleOCR 需手动配置，CUDA 环境更是噩梦！
+- 📦 打包体积巨大，动辄数GB，部署困难。
+- 😓 非技术用户启动门槛高，难以普及。
+
+### 🚀 .NET 版本的优势
+- ✅ **双击运行**：提供 `.exe` 或 `MSI` 安装包，Windows 用户即刻上手！
+- 🖼️ **原生界面**：基于 WPF 的现代化 UI，符合 Windows 操作习惯。
+- 📥 **依赖管理**：通过 NuGet 自动管理依赖，模型缓存到 `%AppData%`，安装无忧。
+- 🧹 **内存优化**：通过 `using` 和 `IDisposable` 严格控制 OpenCV 和 PaddleOCR 资源，稳定可靠。
+- 📏 **轻量分发**：告别 Python 打包的庞大体积，部署更轻松！
+
+### ⚖️ 不足与取舍
+- 🐢 当前版本仅支持 **CPU 推理**，速度稍逊于 Python + GPU 方案，得益于C#的效率优势，实际差距不大。
+- 🔄 并发处理受限，为避免 PaddleOCR 锁死，采用串行锁策略。
+- ⚙️ GPU 部署仍推荐 Python 环境，但配置复杂，适合技术用户。
 
 ---
-# 🚀 v4.9 更新日志
 
-✨ **本次更新亮点：**
+## 🎨 核心功能
 
-1. 🀄 **形近字匹配修复**  
-   - 之前 `similar_map.txt` 中的映射没有生效，现在已经全面接入。  
-   - 识别到的中文会自动替换成更合理的人名与字形，避免 OCR 的“鬼画符”。  
+- 🀄 **PaddleOCR 中文识别**：集成 PP-OCRv4 模型，精准提取图片中的中文姓名，模型自动缓存到 `%AppData%`。
+- 🖼️ **OpenCV 图像预处理**：轻量优化图像，提升 OCR 识别稳定性。
+- 📍 **多 ROI 检测**：优先识别右下角姓名区域，全图兜底，完美适配美术教育场景。
+- 🧠 **智能姓名清洗**：自动过滤不符合姓名特征的文本，输出准确结果。
+- 🔒 **串行执行**：全程串行处理，杜绝 PaddleOCR 并发调用时的锁死问题。
+- 📂 **智能文件夹管理**：根据识别的人名自动创建文件夹，图片自动归档，整理更高效！
 
+---
+
+## 🎉 v4.9 更新亮点
+
+1. 🀄 **形近字匹配优化**  
+   - 修复了 `similar_map.txt` 未生效的问题，OCR 识别的中文现可智能替换为更合理的人名，避免“鬼画符”输出。
 2. 📂 **智能文件夹管理**  
-   - 自动根据识别出的人名创建对应文件夹。  
-   - 图片会被自动移动到相应的人名目录，批量整理更轻松。  
+   - 自动根据识别的人名创建对应文件夹，图片一键归档，批量整理从未如此简单！
+3. 🍗 **开发者小记**  
+   - *今晚吃了德四家的烧鸡，香到飞起！😋🔥*
 
-3. 🍗 **个人小记**  
-   - 今晚吃了德四家的烧鸡，好吃！ 😋🔥  
+---
+
+## 🏫 适用场景
+
+- 🖌️ **教育机构**：快速整理学生作业图片，按图片上的姓名自动重命名并归档。
+- 📚 **档案管理**：批量处理扫描文档，提取中文姓名并规范命名。
+- 🖼️ **美术教育**：针对手写签名图片，精准识别姓名并整理文件。
+
+---
+
+## 📦 安装与使用
+
+1. **下载安装包**  
+   从 [Releases](https://github.com/Lansingd/Optimized-Image-Rename/releases) 下载最新 `.exe` 或 `.MSI` 文件。
+2. **运行程序**  
+   双击运行，Windows 自动完成依赖安装，模型会缓存到 `%AppData%`。
+3. **选择图片文件夹**  
+   在 WPF 界面中选择需要处理的图片文件夹和学生姓名库，点击“开始”即可自动识别并重命名！
+
+---
+
+## 📜 开源许可
+
+![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)  
+本项目采用 **MIT 许可**，欢迎 Fork、Star 和贡献代码！🌟
+
+---
+
+## 🙌 贡献与反馈
+
+- 🐛 发现 Bug？请在 [Issues](https://github.com/Lansingd/Optimized-Image-Rename/issues) 提交问题。
+- 💡 有新想法？欢迎提交 Pull Request 或联系我们！
+- ⭐ 喜欢这个项目？点个 Star 支持一下吧！😄
+
+---
+
+## 📢 关于
+
+**Optimized Image Renamer** 是一款专为中文环境设计的智能图片重命名工具，结合 PaddleOCR 和 OpenCV 技术，助力教育与档案管理场景高效处理图片文件。  
+💌 欢迎加入我们的开源社区，共同打造更好用的工具！
+
+© 2025 Lansingd, proudly powered by .NET and WPF.

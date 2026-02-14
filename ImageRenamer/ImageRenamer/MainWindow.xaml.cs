@@ -104,11 +104,15 @@ public partial class MainWindow : Window
                ct: _cts.Token);
 
             // 5) 扫描图像并处理
-            var files = Directory.EnumerateFiles(_imageFolder!, "*.*")
-                                 .Where(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-                                          || f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                                          || f.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase))
-                                 .ToList();
+            var extensions = new[] { "*.png", "*.jpg", "*.jpeg" };
+
+            var files = extensions
+                .SelectMany(ext => Directory.EnumerateFiles(
+                    _imageFolder!,
+                    ext,
+                    SearchOption.AllDirectories))
+                .ToList();
+
 
             Bar.Minimum = 0; Bar.Maximum = files.Count; Bar.Value = 0;
 

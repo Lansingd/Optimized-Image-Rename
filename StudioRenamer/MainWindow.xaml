@@ -166,7 +166,14 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="原文件" Binding="{Binding FileName, Mode=OneWay}" Width="1.35*"/>
+                            <DataGridTextColumn Header="原文件（相对路径）" Binding="{Binding RelativePath, Mode=OneWay}" Width="1.75*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        <Setter Property="ToolTip" Value="{Binding RelativePath}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
                             <DataGridTextColumn Header="使用姓名" Binding="{Binding Name, Mode=OneWay}" Width="*"/>
                             <DataGridTextColumn Header="状态" Binding="{Binding Status, Mode=OneWay}" Width="104"/>
                         </DataGrid.Columns>
@@ -189,7 +196,8 @@
                         <TextBlock Text="预览与确认" FontSize="16" FontWeight="SemiBold" DockPanel.Dock="Left" Margin="0,0,12,0"/>
                         <CheckBox x:Name="ZoomCorner" Content="放大右下角" DockPanel.Dock="Right" FontSize="12"
                                   VerticalAlignment="Center" IsEnabled="False" Click="ToggleZoom" Margin="12,0,0,0"/>
-                        <TextBlock Text="{Binding FileName}" TextAlignment="Right" TextTrimming="CharacterEllipsis"
+                        <TextBlock Text="{Binding RelativePath}" ToolTip="{Binding RelativePath}"
+                                   TextAlignment="Right" TextTrimming="CharacterEllipsis"
                                    Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
                     </DockPanel>
                     <Border Grid.Row="1" Background="#ECEFE7" CornerRadius="8" Padding="5" ClipToBounds="True">

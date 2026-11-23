@@ -14,7 +14,7 @@
 [Setup]
 AppId={{C10CC4BE-2EFE-4480-98C2-DA2C7FAA0E0F}
 AppName={#AppName}
-AppVersion=5.0.0
+AppVersion=5.0.1
 AppPublisher=一画室
 AppPublisherURL=https://github.com/Lansingd/Optimized-Image-Rename
 AppSupportURL=https://github.com/Lansingd/Optimized-Image-Rename/issues
@@ -24,7 +24,7 @@ DisableProgramGroupPage=yes
 UninstallDisplayIcon={app}\{#AppExe}
 SetupIconFile=..\StudioRenamer\icon.ico
 InfoBeforeFile=InstallInfo.txt
-OutputBaseFilename=Optimized-Image-Rename-5.0.0-win-x64-Setup
+OutputBaseFilename=Optimized-Image-Rename-5.0.1-win-x64-Setup
 WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -35,7 +35,7 @@ RestartApplications=no
 Compression=lzma2
 SolidCompression=yes
 ArchiveExtraction=full
-VersionInfoVersion=5.0.0.0
+VersionInfoVersion=5.0.1.0
 VersionInfoProductName={#AppName}
 
 [Languages]

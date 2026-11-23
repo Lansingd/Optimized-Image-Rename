@@ -5,10 +5,10 @@ using System.Text.RegularExpressions;
 
 namespace StudioRenamer;
 
-internal sealed class Photo(string path) : INotifyPropertyChanged
+internal sealed class Photo(string path, string relativePath) : INotifyPropertyChanged
 {
     public string Source { get; } = path;
-    public string FileName => Path.GetFileName(Source);
+    public string RelativePath { get; } = relativePath;
     public string? Output { get; private set; }
     public string Reading { get; private set; } = "";
     public string Status { get; private set; } = "待识别";
@@ -76,6 +76,7 @@ internal sealed class Photo(string path) : INotifyPropertyChanged
 
 internal static class PhotoFiles
 {
+    public const string ArchiveDirectoryName = "已整理";
     private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".jfif", ".png", ".bmp", ".tif", ".tiff", ".webp"
@@ -93,10 +94,30 @@ internal static class PhotoFiles
         char.IsLetter(value[0]) && char.IsLetter(value[^1]) &&
         !Reserved.Contains(value.Split('.')[0].TrimEnd());
 
-    public static Photo[] Scan(string folder) => Directory.EnumerateFiles(folder)
-        .Where(file => Extensions.Contains(Path.GetExtension(file)))
-        .OrderBy(Path.GetFileName, StringComparer.CurrentCultureIgnoreCase)
-        .Select(file => new Photo(file)).ToArray();
+    public static Photo[] Scan(string folder)
+    {
+        string root = Path.GetFullPath(folder);
+        var directories = new Stack<DirectoryInfo>();
+        var photos = new List<Photo>();
+        directories.Push(new DirectoryInfo(root));
+
+        while (directories.TryPop(out DirectoryInfo? directory))
+        {
+            foreach (FileInfo file in directory.EnumerateFiles())
+            {
+                if (Extensions.Contains(file.Extension))
+                    photos.Add(new Photo(file.FullName, Path.GetRelativePath(root, file.FullName)));
+            }
+
+            foreach (DirectoryInfo child in directory.EnumerateDirectories())
+            {
+                if (child.Name != ArchiveDirectoryName && !child.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    directories.Push(child);
+            }
+        }
+
+        return photos.OrderBy(photo => photo.RelativePath, StringComparer.CurrentCultureIgnoreCase).ToArray();
+    }
 
     public static HashSet<string> ReadRoster(string path)
     {

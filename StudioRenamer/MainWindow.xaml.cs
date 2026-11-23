@@ -30,17 +30,21 @@ public partial class MainWindow : Window
     {
         var dialog = new OpenFolderDialog { Title = "选择装有学生作品照片的目录", InitialDirectory = sourceFolder ?? "" };
         if (dialog.ShowDialog(this) != true) return;
-        if (photos.Any(IsReady) && MessageBox.Show(this, "切换目录会放弃当前待整理的图片。现在切换吗？",
+        if (PhotoList.Items.Cast<Photo>().Any(IsReady) && MessageBox.Show(this, "切换目录会放弃当前待整理的图片。现在切换吗？",
             Title, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        await LoadSourceAsync(dialog.FolderName);
+    }
+
+    private async Task LoadSourceAsync(string folder)
+    {
         Busy(true, indeterminate: true);
-        Message.Text = "正在读取图片目录…";
+        Message.Text = "正在读取图片目录及子文件夹…";
         try
         {
-            Photo[] found = await Task.Run(() => PhotoFiles.Scan(dialog.FolderName));
-            sourceFolder = dialog.FolderName;
+            Photo[] found = await Task.Run(() => PhotoFiles.Scan(folder));
+            sourceFolder = folder;
             SourcePath.Text = sourceFolder;
             outputFolder = null;
-            UpdateOutputLabel();
             foreach (Photo photo in photos) photo.PropertyChanged -= UpdateButtons;
             photos.Clear();
             readings.Clear();
@@ -49,9 +53,7 @@ public partial class MainWindow : Window
                 photo.PropertyChanged += UpdateButtons;
                 photos.Add(photo);
             }
-            ListCount.Text = $"{found.Length} 张图片";
-            EmptyList.Text = "这个目录没有可识别的图片";
-            EmptyList.Visibility = found.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            UpdateOutputLabel();
             PhotoList.SelectedIndex = found.Length == 0 ? -1 : 0;
             Message.Text = found.Length == 0 ? "请选择包含图片的目录" : "点击「开始识别」，或直接在右侧填写姓名";
         }
@@ -117,7 +119,31 @@ public partial class MainWindow : Window
         bool rename = OutputMode.SelectedIndex == 1;
         PickOutputButton.Visibility = rename ? Visibility.Collapsed : Visibility.Visible;
         OutputPath.Text = rename ? sourceFolder ?? "使用图片原目录" :
-            outputFolder ?? (sourceFolder == null ? "默认使用图片目录中的「已整理」" : Path.Combine(sourceFolder, "已整理"));
+            outputFolder ?? (sourceFolder == null ? "默认使用图片目录中的「已整理」" :
+                Path.Combine(sourceFolder, PhotoFiles.ArchiveDirectoryName));
+        if (sourceFolder == null) return;
+
+        Predicate<object>? filter = null;
+        if (!rename && outputFolder != null)
+        {
+            string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(sourceFolder));
+            string archive = Path.TrimEndingDirectorySeparator(Path.GetFullPath(outputFolder));
+            string rootPrefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
+            if (!string.Equals(archive, root, StringComparison.OrdinalIgnoreCase) &&
+                archive.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                string archivePrefix = archive + Path.DirectorySeparatorChar;
+                filter = item => item is Photo photo &&
+                    !photo.Source.StartsWith(archivePrefix, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        PhotoList.Items.Filter = filter;
+        int count = PhotoList.Items.Count;
+        ListCount.Text = $"{count} 张图片";
+        EmptyList.Text = "这个目录及子文件夹里没有可识别的图片";
+        EmptyList.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        UpdateButtons(null, null);
     }
 
     private async void OpenPhoto(object sender, SelectionChangedEventArgs e)
@@ -156,7 +182,7 @@ public partial class MainWindow : Window
 
     private async void StartScan(object sender, RoutedEventArgs e)
     {
-        Photo[] pending = photos.Where(photo => photo.NeedsScan).ToArray();
+        Photo[] pending = PhotoList.Items.Cast<Photo>().Where(photo => photo.NeedsScan).ToArray();
         if (pending.Length == 0) return;
         using var cancel = new CancellationTokenSource();
         operation = cancel;
@@ -168,26 +194,37 @@ public partial class MainWindow : Window
             await ocr.StartAsync(cancel.Token);
             Progress.IsIndeterminate = false;
             Progress.Maximum = pending.Length;
-            foreach (Photo photo in pending)
+            Message.Text = $"正在识别 0/{pending.Length} 张";
+            await Parallel.ForEachAsync(pending, new ParallelOptions
             {
-                cancel.Token.ThrowIfCancellationRequested();
-                Message.Text = $"正在识别 {done + 1}/{pending.Length} · {photo.FileName}";
-                try
+                MaxDegreeOfParallelism = XiaomiOcr.ParallelRequests,
+                CancellationToken = cancel.Token,
+                TaskScheduler = TaskScheduler.Default
+            }, async (photo, token) =>
+            {
+                OcrReading? reading = null;
+                string? error = null;
+                try { reading = await ReadPhoto(photo.Source, token); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                catch (Exception ex) { error = ex.Message; }
+
+                await Dispatcher.InvokeAsync(() =>
                 {
-                    OcrReading reading = await Task.Run(() => ReadPhoto(photo.Source, cancel.Token), cancel.Token);
-                    cancel.Token.ThrowIfCancellationRequested();
-                    readings[photo] = reading;
-                    ShowReading(photo, reading);
-                }
-                catch (OperationCanceledException) when (cancel.IsCancellationRequested) { throw; }
-                catch (Exception ex)
-                {
-                    errors++;
-                    photo.Scanned("", "", false, "识别失败", ex.Message, retry: true);
-                }
-                Progress.Value = ++done;
-            }
-            Message.Text = $"已检查 {done} 张 · {errors} 张失败 · {photos.Count(IsReady)} 张已勾选";
+                    if (reading != null)
+                    {
+                        readings[photo] = reading;
+                        ShowReading(photo, reading);
+                    }
+                    else
+                    {
+                        errors++;
+                        photo.Scanned("", "", false, "识别失败", error!, retry: true);
+                    }
+                    Progress.Value = ++done;
+                    Message.Text = $"正在识别 {done}/{pending.Length} · {photo.RelativePath}";
+                }, cancellationToken: token, priority: System.Windows.Threading.DispatcherPriority.Normal);
+            });
+            Message.Text = $"已检查 {done} 张 · {errors} 张失败 · {PhotoList.Items.Cast<Photo>().Count(IsReady)} 张已勾选";
         }
         catch (OperationCanceledException) when (cancel.IsCancellationRequested)
         {
@@ -266,11 +303,11 @@ public partial class MainWindow : Window
 
     private async void Save(object sender, RoutedEventArgs e)
     {
-        var batch = photos.Where(IsReady).Select(photo => (Photo: photo, Name: photo.Name.Trim())).ToArray();
+        var batch = PhotoList.Items.Cast<Photo>().Where(IsReady).Select(photo => (Photo: photo, Name: photo.Name.Trim())).ToArray();
         if (batch.Length == 0 || sourceFolder == null) return;
         bool rename = OutputMode.SelectedIndex == 1;
-        string? archive = rename ? null : outputFolder ?? Path.Combine(sourceFolder, "已整理");
-        if (rename && MessageBox.Show(this, $"将在原目录重命名 {batch.Length} 张已勾选图片。是否继续？",
+        string? archive = rename ? null : outputFolder ?? Path.Combine(sourceFolder, PhotoFiles.ArchiveDirectoryName);
+        if (rename && MessageBox.Show(this, $"将在图片各自所在的目录重命名 {batch.Length} 张已勾选图片。是否继续？",
             Title, MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
 
         Busy(true, indeterminate: false);
@@ -280,7 +317,7 @@ public partial class MainWindow : Window
         {
             foreach (var (photo, name) in batch)
             {
-                Message.Text = $"正在整理 {written + failed + 1}/{batch.Length} · {photo.FileName}";
+                Message.Text = $"正在整理 {written + failed + 1}/{batch.Length} · {photo.RelativePath}";
                 try
                 {
                     string path = await Task.Run(() => PhotoFiles.Write(photo.Source, name, archive));
@@ -323,8 +360,8 @@ public partial class MainWindow : Window
 
     private void UpdateButtons(object? sender, PropertyChangedEventArgs? e)
     {
-        ScanButton.IsEnabled = Settings.IsEnabled && photos.Any(photo => photo.NeedsScan);
-        SaveButton.IsEnabled = Settings.IsEnabled && photos.Any(IsReady);
+        ScanButton.IsEnabled = Settings.IsEnabled && PhotoList.Items.Cast<Photo>().Any(photo => photo.NeedsScan);
+        SaveButton.IsEnabled = Settings.IsEnabled && PhotoList.Items.Cast<Photo>().Any(IsReady);
         NameEditor.IsEnabled = Settings.IsEnabled && PhotoList.SelectedItem is Photo { Output: null };
         RosterSuggestionPanel.IsEnabled = Settings.IsEnabled;
     }

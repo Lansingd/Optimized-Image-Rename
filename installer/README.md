@@ -1,4 +1,4 @@
-# 构建 5.0 Windows 安装器
+# 构建 Windows 安装器
 
 构建环境需要 .NET 8 SDK、Inno Setup 6.7 或兼容版本，以及相应的简体中文语言文件。简体中文文件可从 Inno Setup 源码仓库的 Files/Languages/ChineseSimplified.isl 获取。
 

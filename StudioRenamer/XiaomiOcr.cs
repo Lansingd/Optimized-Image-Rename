@@ -16,6 +16,7 @@ internal sealed record OcrReading(string Raw, string[] Names);
 internal sealed class XiaomiOcr : IDisposable
 {
     public const string Model = "longwayxu/xiaomi-ocr-0:bf16";
+    public const int ParallelRequests = 4;
     private const string Prompt = """
         这是学生作品的照片。找出照片中真实可见的学生姓名或手写署名，逐字照抄。优先看“姓名”栏和作品边角的署名，也检查其他位置。不要把题目、日期、学校、画室或印刷标语当作姓名，不要猜测看不清的字。只输出 JSON，例如 {"names":["张明"]}。如果没有清晰署名输出 {"names":[]}。如果有多个可能的姓名，将它们都放进数组。
         """;
@@ -61,7 +62,7 @@ internal sealed class XiaomiOcr : IDisposable
         start.Environment["OLLAMA_MODELS"] = models;
         start.Environment["OLLAMA_NO_CLOUD"] = "1";
         start.Environment["OLLAMA_NOPRUNE"] = "1";
-        start.Environment["OLLAMA_NUM_PARALLEL"] = "1";
+        start.Environment["OLLAMA_NUM_PARALLEL"] = ParallelRequests.ToString(System.Globalization.CultureInfo.InvariantCulture);
         start.Environment["OLLAMA_MAX_LOADED_MODELS"] = "1";
         startupError = "";
         try

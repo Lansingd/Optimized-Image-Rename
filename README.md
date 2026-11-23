@@ -1,147 +1,44 @@
-# 一画室智能图片命名工具
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
-![PyQt5](https://img.shields.io/badge/PyQt5-5.15%2B-green)
-![OCR](https://img.shields.io/badge/OCR-EasyOCR%20%26%20PaddleOCR-orange)
+# 一画室图片整理
 
-**一款基于OCR技术的智能图片重命名工具，支持中文姓名识别与自动命名，方便大批量图片的管理，专为美术教育机构设计。**
+[5.0.1 下载与发布说明](https://github.com/Lansingd/Optimized-Image-Rename/releases/tag/v5.0.1) · [安装器构建](installer/README.md) · [旧版文档](https://github.com/Lansingd/Optimized-Image-Rename/blob/049928c5e9eaf505f5b96fa581d675be4b70a486/README.md)
 
-![image](https://github.com/Lansingd/Optimized-Image-Rename/blob/main/IMG/main.png)
+## 一画室图片整理 5.0.1
 
+一画室图片整理是一款 Windows 桌面工具，用来批量识别学生作品照片上的姓名，再按学生归档或统一重命名。适用于画室、学校和老师整理作品集、课堂记录与奖状照片。
 
-## 项目简介
+5.0 重写了桌面程序，使用 Xiaomi-OCR-0 0.8B 模型进行本地识别。程序可以读取画框外的姓名水印、作品上的落款、姓名栏和证书中的姓名。识别结果先进入预览列表，确认后再处理文件。
 
-一画室智能图片命名 是一款基于 OCR（光学字符识别）技术的自动图片重命名工具，智能识别图片中的人名并重命名文件。
-适用于处理批量图片文件，并根据图片内容进行智能命名。本软件支持 EasyOCR 和 PaddleOCR 两种识别引擎，并提供多种优化策略，以提高识别准确率。
+### 安装
 
-## 效果展示
+1. 从发布页的 Assets 下载 **Optimized-Image-Rename-5.0.1-win-x64-Setup.exe**。
+2. 在 Windows 10 22H2 或 Windows 11 的 x64 系统上运行安装器。程序按当前用户安装，内置 .NET 桌面运行时。
+3. 安装时保持联网。安装器会下载并校验 Xiaomi-OCR-0 BF16 权重、视觉投影和 Ollama 运行时。联网下载总量约 **3.4 GB**，其中模型约 **1.8 GB**。建议安装盘至少留出 **5 GB**，系统盘和安装盘合计至少留出 **8 GB**。
+4. 安装完成后，从开始菜单打开「一画室图片整理」。识别可离线运行，作品照片和名单在本机处理。首次识别需要加载模型。
 
-![image](https://github.com/Lansingd/Optimized-Image-Rename/blob/main/IMG/test/test1.png)
-![image](https://github.com/Lansingd/Optimized-Image-Rename/blob/main/IMG/test/test2.png)
+### 用法
 
-## 功能特点
+1. 点击「选择图片目录」。支持常见的 JPG、PNG、BMP、TIFF 等格式，也可选择有读取权限的 Windows 共享目录。程序会查找所选目录及各级子文件夹中的图片，列表显示相对路径。
+2. 可点击「导入名单」，选择单列 TXT 或 CSV，每行填写一个姓名。
+3. 点击「开始识别」。程序最多同时识别 4 张图片。与名单完全匹配的结果会自动勾选。遇到名单外姓名时，点开该照片，在右侧「从名单选择姓名」查看相差一个字的候选，例如「罗仕宜」可提示「罗祉宜」，多个相似人名会一起列出。点击人名会填入「使用姓名」并勾选该照片。
+4. 逐张核对需要确认的结果。可以放大右下角、查看模型的原始识别结果、手动改名或取消勾选。
+5. 点击「整理所选图片」。默认保留原图，并将副本写入「已整理」下方对应的姓名文件夹，也可另选归档位置。切换到「在原目录重命名」后，图片在各自所在的文件夹内重命名。重名会自动加上编号。
 
-- **多引擎支持**：支持 EasyOCR 和 PaddleOCR，可单独使用或组合使用。
-- **智能匹配**：结合形近字映射、全名匹配、子串匹配、单字兜底等策略，提高识别准确率。
-- **高效处理**：支持批量图片处理，并提供日志记录与进度显示。
-- **可选图像预处理**：针对灰底白字等情况进行增强处理，提高识别效果。
-- **灵活配置**：用户可自定义 OCR 识别模式、处理区域、预处理选项等。
+### 5.0.1 更新内容
 
-## 运行环境
+- 选中父目录后可识别各级子文件夹里的图片。列表显示相对路径，扫描时跳过「已整理」及当前选定的子目录归档位置。
+- 默认同时处理最多 4 张图片。点击「停止」保留已完成的结果，再次开始可继续处理其余图片。
 
-- **Python 版本**：3.11 3.12
-- **CUDA 版本**：11.8（如果使用 GPU 加速）
-- **CUDNN 版本**：8.9.7（如果使用 GPU 加速）
-- **依赖库**：
-  - PyQt5
-  - OpenCV (cv2)
-  - EasyOCR
-  - PaddleOCR
-  - NumPy
-  - Torch（如果使用 GPU 加速）
+### 5.0 更新内容
 
-## 运行方法
+- **本地 OCR 引擎**。使用 Xiaomi-OCR-0 0.8B 的 BF16 GGUF 社区转换版和视觉投影，通过 Ollama 在本机推理。
+- **小字与证书识别**。从原图裁出右下角小字并进行两次核对，按需识别全图、落款和证书姓名栏。识别结果有分歧时列出候选。
+- **识别结果解析**。兼容多种模型输出格式，提取姓名字段，合并重复姓名，减少模型已经读出但界面遗漏的情况。
+- **名单候选**。对相差一个字的结果展示名单中的候选，支持一键选用，适用于错字、漏字和多字。
+- **新界面与文件处理**。新增原图预览、右下角放大、手动校正、进度与停止操作。支持复制归档、原位改名及重名编号，并使用一画室程序图标。
+- **联网安装器**。简体中文界面，安装期间下载并校验模型及推理运行时。
 
-### 方式 1：使用安装包（不推荐）
+### 关于验证
 
-直接运行提供的 Windows 安装包进行安装，无需手动配置环境。
+已在 Windows 上验证模型推理、名单匹配、候选点选、复制归档和重名处理。小号姓名水印和证书姓名栏也经过真实作品照片复测。遇到模糊字迹或生僻字时，可依据原图人工确认。
 
-### 方式 2：直接运行（推荐）
-
-1. 克隆项目：
-   ```bash
-   git clone https://github.com/Lansingd/Optimized-Image-Rename.git
-   cd Optimized-Image-Rename
-   ```
-2. 安装依赖（推荐在conda环境下）：
-   ```bash
-   python -m pip install paddlepaddle-gpu==3.0.0rc1 -i https://www.paddlepaddle.org.cn/packages/stable/cu118/
-   pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-   pip install -r requirements.txt
-   ```
-3. 运行程序：
-   ```bash
-   python main4.6.2.py
-   ```
-
-## 使用方法
-
-1. **选择图片文件夹**：点击“选择图片文件夹”按钮，选定包含图片的目录。
-2. **选择姓名库文件**：
-➤ 文本文件格式（.txt），每行一个中文姓名
-➤ 示例：
-   ```
-   张三
-   李四
-   王小明
-   ```
-3. **相似字映射表(可选)**：编辑similar_map.txt文件添加自定义映射：
-➤ 示例：
-   ```
-   "孑": "子",
-   "壬": "王",
-   ```
-5. **配置 OCR 选项**（可选）：
-   - 选择 OCR 引擎（EasyOCR、PaddleOCR、双重识别）。
-   - 选择是否启用图像预处理、全图识别模式、单字兜底匹配。
-6. **开始处理**：点击“开始处理”按钮，软件会自动识别图片中的姓名并重命名文件。
-7. **查看日志与进度**：进度条显示当前处理进度，日志窗口记录详细处理信息。
-8. **停止处理**（可选）：在任务执行过程中可随时点击“停止”按钮中断任务。
-9. **推荐选项**：OCR 引擎：PaddleOCR；不启用图像预处理；不使用单字兜底匹配；使用全图识别模式。
-
-## 目录结构
-
-```plaintext
-main/
-│── models/               # OCR 相关模型存储目录
-│── main4.5.py            # 主程序
-│── similar_map.txt       # 相似字映射表
-│── requirements.txt      # 依赖库列表
-│── README.md             # 说明文档
-│── LICENSE               # 许可证文件
-└── dist/                 # 打包输出目录
-```
-
-## 更新日志
-v1.0：实现基本图片重命名功能，使用 EasyOCR 进行 OCR 识别。
-遍历指定文件夹中的图片文件，裁剪右下角区域进行 OCR 识别。
-将识别的文本清理后作为新文件名，处理重名文件。
-
-v1.1：改进图像预处理和姓名格式化，添加错误处理。
-添加针对灰底白字的图像预处理（反色、对比度增强、模糊）。
-规范姓名格式，只保留中文字符，优先取最后 3 个字。
-添加错误处理和日志记录，记录处理失败的文件。
-
-v2.0：引入姓名库和智能匹配，提高重命名准确性。
-加载姓名库并构建姓名映射，支持智能匹配，优先匹配库中姓名。
-添加模糊匹配标记，区分匹配可靠性。
-优化 OCR 识别的预处理和参数。
-
-v3.0：添加 GUI 界面和多线程处理，提升用户体验和效率。
-添加 Tkinter GUI 界面，支持用户选择文件夹、姓名库文件和 OCR 引擎。
-支持 EasyOCR 和 PaddleOCR 双引擎，以及双重识别模式。
-添加图像预处理选项和全图识别模式。
-实现多线程处理和进度条显示，改进日志记录和错误处理。
-
-
-## 贡献指南
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本项目
-2. 创建你的特性分支 (`git checkout -b feature-branch`)
-3. 提交你的修改 (`git commit -m 'Add some feature'`)
-4. 推送到远程分支 (`git push origin feature-branch`)
-5. 提交 Pull Request
-
-## 许可证
-
-本项目采用 MIT 许可证，详情请参阅 [LICENSE](LICENSE) 文件。
-
-## 联系方式
-
-如有任何问题或建议，请联系 [[Lans3q@Gmail.com](mailto\:your-email@example.com)] 或访问 GitHub 项目页面提交 Issue。
-
----
-
-感谢使用“一画室智能图片命名”！希望能帮助你提高工作效率 🎨📷✨
-
+模型项目与运行时许可随安装提供。[Xiaomi-OCR-0](https://github.com/xiaomi-research/Xiaomi-OCR-0) · [模型包](https://ollama.com/longwayxu/xiaomi-ocr-0:bf16) · [Ollama](https://github.com/ollama/ollama)

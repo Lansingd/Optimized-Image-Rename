@@ -1,0 +1,260 @@
+<Window x:Class="StudioRenamer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="一画室 · 图片整理" Icon="icon.ico" Width="1180" Height="800" MinWidth="920" MinHeight="665"
+        WindowStartupLocation="CenterScreen" Background="#F3F1EB"
+        Foreground="#202C29" FontFamily="Microsoft YaHei UI" FontSize="14">
+    <Window.Resources>
+        <SolidColorBrush x:Key="Ink" Color="#202C29"/>
+        <SolidColorBrush x:Key="Muted" Color="#596B63"/>
+        <SolidColorBrush x:Key="Accent" Color="#17604E"/>
+        <SolidColorBrush x:Key="Line" Color="#E3E6DD"/>
+        <Style x:Key="Panel" TargetType="Border">
+            <Setter Property="Background" Value="#FFFEFB"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Line}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#D4DCD2"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Surface" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Opacity" Value="0.80"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Surface" Property="Opacity" Value="0.65"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Surface" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="Primary" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style x:Key="MutedText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F2F5EF"/>
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Padding" Value="10,9"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#E1F0E7"/>
+                    <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="26,20,26,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" FontSize="12"
+                       Foreground="{StaticResource Accent}" Text="Xiaomi-OCR-0  ·  本机识别"/>
+            <StackPanel>
+                <TextBlock Text="一画室" FontSize="13" Foreground="{StaticResource Accent}" FontWeight="SemiBold"/>
+                <TextBlock Text="图片整理" FontSize="33" FontWeight="Bold" Margin="0,1,0,0"/>
+            </StackPanel>
+        </DockPanel>
+        <Border Grid.Row="1" Style="{StaticResource Panel}" Padding="14" Margin="0,0,0,14">
+            <Grid x:Name="Settings">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <DockPanel Margin="0,0,12,0">
+                    <Button DockPanel.Dock="Left" Content="选择图片目录" Click="PickSource" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="SourcePath" Style="{StaticResource MutedText}" Text="尚未选择" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                </DockPanel>
+                <DockPanel Grid.Column="1" Margin="0,0,12,0">
+                    <Button DockPanel.Dock="Left" Content="导入名单" Click="PickRoster" Margin="0,0,8,0"/>
+                    <Button x:Name="ClearRosterButton" DockPanel.Dock="Right" Content="清除" Click="ClearRoster"
+                            Padding="9,6" Visibility="Collapsed" Margin="5,0,0,0"/>
+                    <TextBlock x:Name="RosterPath" Style="{StaticResource MutedText}" Text="可选，支持 TXT / CSV" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                </DockPanel>
+                <Button Grid.Column="2" x:Name="ScanButton" Style="{StaticResource Primary}" Content="开始识别" Click="StartScan" IsEnabled="False"/>
+                <DockPanel Grid.Row="1" Grid.ColumnSpan="3" Margin="0,11,0,0">
+                    <ComboBox x:Name="OutputMode" DockPanel.Dock="Left" SelectedIndex="0" Width="168" Height="30"
+                              Margin="0,0,10,0" SelectionChanged="OutputModeChanged" AutomationProperties.Name="整理方式">
+                        <ComboBoxItem Content="复制并按姓名归档"/>
+                        <ComboBoxItem Content="在原目录重命名"/>
+                    </ComboBox>
+                    <Button x:Name="PickOutputButton" DockPanel.Dock="Left" Content="归档位置" Click="PickOutput"
+                            MinHeight="30" Padding="10,3" Margin="0,0,10,0"/>
+                    <TextBlock x:Name="OutputPath" Style="{StaticResource MutedText}" Text="默认使用图片目录中的「已整理」"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                </DockPanel>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.28*" MinWidth="400"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="*" MinWidth="345"/>
+            </Grid.ColumnDefinitions>
+            <Border Style="{StaticResource Panel}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="15,11">
+                        <TextBlock x:Name="ListCount" DockPanel.Dock="Right" VerticalAlignment="Center"
+                                   Style="{StaticResource MutedText}" Text="0 张图片"/>
+                        <TextBlock Text="图片列表" FontSize="16" FontWeight="SemiBold"/>
+                    </DockPanel>
+                    <DataGrid x:Name="PhotoList" Grid.Row="1" AutoGenerateColumns="False" RowHeight="35"
+                              IsReadOnly="True" SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="#EDF0EA" SelectionChanged="OpenPhoto" CanUserResizeRows="False"
+                              CanUserAddRows="False" BorderThickness="0" Background="#FFFEFB" RowBackground="#FFFEFB"
+                              AlternatingRowBackground="#F8F9F5" EnableRowVirtualization="True">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="处理" Width="48">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Included, Mode=TwoWay}" HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" AutomationProperties.Name="纳入本次整理"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="原文件（相对路径）" Binding="{Binding RelativePath, Mode=OneWay}" Width="1.75*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        <Setter Property="ToolTip" Value="{Binding RelativePath}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="使用姓名" Binding="{Binding Name, Mode=OneWay}" Width="*"/>
+                            <DataGridTextColumn Header="状态" Binding="{Binding Status, Mode=OneWay}" Width="104"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock x:Name="EmptyList" Grid.Row="1" Text="选择图片目录开始整理" IsHitTestVisible="False"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Muted}"/>
+                </Grid>
+            </Border>
+            <Border Grid.Column="2" Style="{StaticResource Panel}" Padding="14">
+                <Grid x:Name="PhotoEditor">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="1,0,0,9">
+                        <TextBlock Text="预览与确认" FontSize="16" FontWeight="SemiBold" DockPanel.Dock="Left" Margin="0,0,12,0"/>
+                        <CheckBox x:Name="ZoomCorner" Content="放大右下角" DockPanel.Dock="Right" FontSize="12"
+                                  VerticalAlignment="Center" IsEnabled="False" Click="ToggleZoom" Margin="12,0,0,0"/>
+                        <TextBlock Text="{Binding RelativePath}" ToolTip="{Binding RelativePath}"
+                                   TextAlignment="Right" TextTrimming="CharacterEllipsis"
+                                   Style="{StaticResource MutedText}" VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <Border Grid.Row="1" Background="#ECEFE7" CornerRadius="8" Padding="5" ClipToBounds="True">
+                        <Grid>
+                            <TextBlock x:Name="PreviewStatus" Text="选择一张图片查看" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Style="{StaticResource MutedText}"/>
+                            <Image x:Name="Preview" Stretch="Uniform"/>
+                        </Grid>
+                    </Border>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,3">
+                        <TextBlock Text="使用姓名" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox x:Name="NameEditor" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                 FontSize="16" Width="170" Padding="7,3" BorderBrush="#C8D6CC" IsEnabled="False"
+                                 AutomationProperties.Name="使用姓名"/>
+                    </StackPanel>
+                    <TextBlock Grid.Row="3" Text="{Binding Detail}" Style="{StaticResource MutedText}" Margin="0,4,0,2"
+                               MaxHeight="34" TextWrapping="Wrap" ToolTip="{Binding Detail}"/>
+                    <StackPanel x:Name="RosterSuggestionPanel" Grid.Row="4" Margin="0,6,0,0" Visibility="Collapsed">
+                        <TextBlock Text="从名单选择姓名" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
+                        <ScrollViewer MaxHeight="84" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl x:Name="RosterSuggestionList" AutomationProperties.Name="名单候选">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Content="{Binding}" Click="ChooseRosterName" Margin="0,0,6,4"
+                                                Background="#EBF5EE" BorderBrush="#C8DED1" Foreground="{StaticResource Accent}"
+                                                Padding="9,4" MinHeight="28" FontSize="13"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                    <Expander Grid.Row="5" Header="模型原始识别结果" Margin="0,4,0,0" FontSize="12">
+                        <TextBox Text="{Binding Reading, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
+                                 Padding="5" VerticalScrollBarVisibility="Auto" MaxHeight="65" BorderBrush="#E3E6DD"/>
+                    </Expander>
+                </Grid>
+            </Border>
+        </Grid>
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                <TextBlock x:Name="Message" Text="先选择图片目录" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                <ProgressBar x:Name="Progress" Height="4" Visibility="Collapsed" Margin="0,6,0,0"
+                             Foreground="{StaticResource Accent}" Background="#DFE9E0"/>
+            </StackPanel>
+            <Button x:Name="StopButton" Grid.Column="1" Content="停止" Margin="0,0,9,0" Visibility="Collapsed" Click="Stop"/>
+            <Button x:Name="SaveButton" Grid.Column="2" Content="整理所选图片" Style="{StaticResource Primary}" IsEnabled="False" Click="Save"/>
+        </Grid>
+    </Grid>
+</Window>
